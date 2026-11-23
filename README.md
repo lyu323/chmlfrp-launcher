@@ -13,7 +13,7 @@
 | --- | --- |
 | `ChmlFrpLauncher-v3.0.1-arm64.apk` | 推荐，绝大多数现代安卓手机（arm64-v8a） |
 | `ChmlFrpLauncher-v3.0.1-allarch.apk` | arm64 / armeabi-v7a / x86_64 |
-| `ChmlFrpLauncher-v3.0.1-source.zip` | 与本仓库内容一致的源码快照 |
+| `ChmlFrpLauncher-v3.0.1-source.zip` | 与本仓库内容一致的源码快照（MIT，零二进制、零密钥） |
 
 两个 APK 使用同一签名证书，可直接覆盖安装升级，本机令牌、配置、主题与隧道缓存都会保留。
 
@@ -27,6 +27,18 @@
 - 设备与 ROM 适配说明、多套主题、液态玻璃弹窗、隐藏后台
 - 日志搜索 / 只看异常 / 脱敏分享 / 一键自检
 - 「联系作者」直达 QQ 官方加好友页（内置 `mqqopensdkapi` 通道，零联网、不写剪贴板）
+
+## 开源边界
+
+**公开**：本 App 自己编写的 Java 源码、资源、构建脚本、文档，采用 [MIT](LICENSE) 许可。
+
+**不公开 / 不在仓库与源码 zip 中**（这是刻意保留的部分）：
+- 签名密钥 `.jks` 与任何硬编码密码 —— `build.sh` 只从 `KS_PASS` / `KEY_PASS` 环境变量读取；
+- 第三方 `libfrpc.so` 内核二进制 —— 不属于本仓库代码，请自备后放入 `FRPC_LIBS_DIR`；
+- 任何访问令牌、账号密码、设备标识、个人节点地址或私有域名。
+
+APK 作为已编译产物随 Release 分发；源码仓库与源码 zip 均**零二进制、零密钥**。
+`CLIENT_ID` 是官方 OAuth 的公开参数，不是密钥。
 
 ## 隐私
 
@@ -64,6 +76,10 @@ bash build.sh
 
 - Bug / 需求：[Issues](https://github.com/lyu323/chmlfrp-launcher/issues)
 - 也可在 App 内点「✉ 联系作者」直达 QQ 加好友页
+
+## 许可
+
+[MIT](LICENSE) · 第三方 frpc 内核二进制不在本许可范围内，权利归其原作者所有。
 
 ## 免责
 
