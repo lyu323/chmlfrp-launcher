@@ -54,11 +54,12 @@ build_variant() {
         --version-code 14 --version-name 3.0.1 \
         --java gen res.zip
 
-    cp "base-$variant.apk" "work-$variant.apk"
-    zip -q -j "work-$variant.apk" dexout/classes.dex
+    WORK_ABS="$PWD/work-$variant.apk"
+    cp "base-$variant.apk" "$WORK_ABS"
+    zip -q -j "$WORK_ABS" dexout/classes.dex
 
     echo "== 加入 native libraries (stored, 不压缩): $variant =="
-    (cd "$stage" && zip -q -0 -r "/data/workspace/build/work-$variant.apk" lib)
+    (cd "$stage" && zip -q -0 -r "$WORK_ABS" lib)
 
     $BT/zipalign -f 4 "work-$variant.apk" "aligned-$variant.apk"
 
@@ -76,10 +77,10 @@ build_variant() {
         echo "== 未配置 KS_PASS / keystore，输出未签名 APK（仅供本地调试）: $outname =="
         cp "aligned-$variant.apk" "$OUT_DIR/$outname"
     fi
-    ls -lh "/data/workspace/$outname"
+    ls -lh "$OUT_DIR/$outname"
 }
 
-build_variant arm64 libstage-arm64 "ChmlFrp启动器-arm64.apk"
-build_variant all   libstage-all  "ChmlFrp启动器-全架构.apk"
+build_variant arm64 libstage-arm64 "ChmlFrpLauncher-v3.0.1-arm64.apk"
+build_variant all   libstage-all  "ChmlFrpLauncher-v3.0.1-allarch.apk"
 
 echo "== 完成 =="

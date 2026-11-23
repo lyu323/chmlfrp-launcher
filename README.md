@@ -79,7 +79,7 @@ bash build.sh
 
 ## 许可
 
-[MIT](LICENSE) · 第三方 frpc 内核二进制不在本许可范围内，权利归其原作者所有。
+[MIT](LICENSE) · 第三方 `libfrpc.so` 内核二进制不在本许可范围内，权利归其原作者所有。
 
 ## 免责
 
