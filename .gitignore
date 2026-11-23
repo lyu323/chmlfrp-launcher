@@ -1,0 +1,20 @@
+# 签名密钥与打包产物绝不入库
+*.jks
+*.keystore
+*.apk
+*.zip
+aligned-*.apk
+work-*.apk
+base-*.apk
+classes/
+dexout/
+gen/
+res.zip
+libstage-*/
+out/
+frpc-libs/
+# 本地凭证与工具链
+.gh_token
+.env
+*.pem
+local.properties
