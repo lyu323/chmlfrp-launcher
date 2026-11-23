@@ -110,6 +110,8 @@ public class MainActivity extends Activity {
         switchPage(sp.getInt("page", 0));
         h.post(ticker);
         if (!new File(getFilesDir(), "runtime.log").exists()) {
+            log("[提示] v3.1.0：新增「检查更新」，连接本项目 GitHub Releases，手动点击才联网");
+            log("[提示] v3.1.0：设置页 / 关于页加入项目地址、Star、更新日志、开源许可与另一项目入口");
             log("[提示] v3.0.1：联系作者内置 QQ 官方落地页，零联网直达加好友页，不再只打开主界面");
             log("[提示] v3.0.1：不再自动复制链接，只有点「复制链接」才写剪贴板");
             log("[提示] v3.0：修复装了 QQ 却跳浏览器（包可见性 + 强制交给 QQ）");
@@ -204,7 +206,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Ui.dp(this, 4);
         box.setPadding(pad, pad, pad, pad);
-        box.addView(Ui.osTitle(this, "联系作者", "v3.0.1"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "联系作者", "v3.1.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "已修复「只跳到 QQ 主界面」：现在走 QQ 官方落地页的 Android 通道"
                 + "（mqqopensdkapi://bizAgent/qm/qr）直达加好友页，短链解析一次就本机缓存。"
@@ -512,7 +514,7 @@ public class MainActivity extends Activity {
         texts.addView(titleRow);
 
         TextView sub = new TextView(this);
-        sub.setText("安卓端 frpc · v2 API · 免 Root · v3.0.1");
+        sub.setText("安卓端 frpc · v2 API · 免 Root · v3.1.0");
         sub.setTextSize(11);
         sub.setTextColor(0xFFD6E4FF);
         sub.setPadding(0, Ui.dp(this, 3), 0, 0);
@@ -1473,6 +1475,34 @@ public class MainActivity extends Activity {
                 Ui.button(this, "通知设置", 2, new View.OnClickListener() {
                     @Override public void onClick(View v) { openNotificationSettings(); }
                 })));
+
+        c.addView(Ui.section(this, "版本更新"), Ui.gap(this, 8));
+        LinearLayout upd = Ui.card(this);
+        upd.addView(Ui.osTip(this,
+                "检查更新连接本项目 GitHub 仓库的 Releases（api.github.com 公开接口），"
+                + "只在点按钮时联网、只读取版本信息，不上传任何数据；发现新版只给下载入口，不自动安装。", 2),
+                Ui.gap(this, 8));
+        upd.addView(Ui.row(this,
+                Ui.button(this, "检查更新", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { checkUpdate(); }
+                }),
+                Ui.button(this, "项目地址", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.REPO_URL); }
+                })), Ui.gap(this, 6));
+        upd.addView(Ui.row(this,
+                Ui.button(this, "在 GitHub 点个 Star", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.STAR_URL); }
+                }),
+                Ui.button(this, "更新日志", 2, new View.OnClickListener() {
+                    @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
+                })), Ui.gap(this, 6));
+        TextView uv = new TextView(this);
+        uv.setText("当前版本 " + UpdateChecker.APP_VERSION
+                + " · 数据源：github.com/" + UpdateChecker.REPO + "/releases（不点不联网）");
+        uv.setTextSize(10);
+        uv.setTextColor(Ui.MUTED);
+        upd.addView(uv, Ui.gap(this, 6));
+        c.addView(upd, Ui.gap(this, 10));
 
         c.addView(Ui.row(this,
                 Ui.button(this, "清除 Token", 3, new View.OnClickListener() {
@@ -3229,12 +3259,102 @@ public class MainActivity extends Activity {
         } else open(appDetails(), "请在应用详情里允许通知");
     }
 
+    /** v3.1.0：手动检查更新，连接本项目 GitHub Releases（只读取，不上传）。 */
+    private void checkUpdate() {
+        toast("正在连接 GitHub 检查更新…");
+        UpdateChecker.checkAsync(new UpdateChecker.Callback() {
+            @Override public void done(UpdateChecker.Info info) { showUpdateResult(info); }
+        });
+    }
+
+    private void openGithub(String url) {
+        if (!UpdateChecker.open(MainActivity.this, url)) toast("无法打开浏览器");
+    }
+
+    /** 结果弹窗：和「设置 / 关于」同一套液态玻璃卡片。 */
+    private void showUpdateResult(final UpdateChecker.Info info) {
+        LinearLayout box = new LinearLayout(this);
+        box.setOrientation(LinearLayout.VERTICAL);
+        box.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
+        box.addView(Ui.osTitle(this, "检查更新", UpdateChecker.APP_VERSION), Ui.gap(this, 8));
+        box.addView(Ui.osTip(this, info.status(), info.ok && info.newer ? 1 : 2), Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "数据源"), Ui.gap(this, 8));
+        box.addView(Ui.osRow(this, "GitHub 仓库", UpdateChecker.REPO, "", true), Ui.match());
+        box.addView(Ui.osRow(this, "联网时机", "仅手动点「检查更新」时读取公开 Release 信息，不上传任何数据", "", true), Ui.match());
+        box.addView(Ui.osRow(this, "本机版本", UpdateChecker.APP_VERSION, "", false), Ui.match());
+        if (info.ok) {
+            box.addView(Ui.section(this, "最新版本"), Ui.gap(this, 8));
+            String title = info.tag + (info.name.length() > 0 ? " · " + info.name : "");
+            box.addView(Ui.osRow(this, "Release", title, "", true), Ui.match());
+            box.addView(Ui.osRow(this, "下载页", info.htmlUrl, "", false), Ui.match());
+            if (info.body.length() > 0) {
+                String brief = info.body.length() > 420 ? info.body.substring(0, 420) + "…" : info.body;
+                box.addView(Ui.section(this, "更新说明"), Ui.gap(this, 8));
+                box.addView(Ui.osTip(this, brief, 0), Ui.gap(this, 8));
+            }
+        }
+
+        final String page = info.ok && info.htmlUrl.length() > 0
+                ? info.htmlUrl : UpdateChecker.LATEST_URL;
+        final String apk = info.apkUrl.length() > 0 ? info.apkUrl : UpdateChecker.RELEASES_URL;
+        new GlassDialog.Builder(this)
+                .setTitle(info.ok && info.newer ? "发现新版本" : "检查更新")
+                .setSubtitle("连接本项目 GitHub Releases · 只读取版本信息")
+                .setView(box)
+                .setPositiveButton("打开 Releases / 下载页", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) { openGithub(page); }
+                })
+                .setNeutralButton(info.ok && info.apkUrl.length() > 0 ? "直接下载 APK" : "项目主页",
+                        new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        openGithub(info.ok && info.apkUrl.length() > 0 ? apk : UpdateChecker.REPO_URL);
+                    }
+                })
+                .setNegativeButton("关闭", null).show();
+    }
+
+    /** 图二风格的项目 / 更新行，设置页与关于页共用。 */
+    private void addProjectRows(LinearLayout box) {
+        box.addView(Ui.section(this, "项目与更新"), Ui.gap(this, 8));
+        View r1 = Ui.osRow(this, "检查更新", "连接本项目 GitHub Releases，手动检查新版本", "", true);
+        r1.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { checkUpdate(); }
+        });
+        box.addView(r1, Ui.match());
+        View r2 = Ui.osRow(this, "项目地址", UpdateChecker.REPO_URL, "", true);
+        r2.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.REPO_URL); }
+        });
+        box.addView(r2, Ui.match());
+        View r3 = Ui.osRow(this, "在 GitHub 点个 Star", UpdateChecker.STAR_URL, "", true);
+        r3.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.STAR_URL); }
+        });
+        box.addView(r3, Ui.match());
+        View r4 = Ui.osRow(this, "更新日志", "CHANGELOG.md", "", true);
+        r4.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
+        });
+        box.addView(r4, Ui.match());
+        View r5 = Ui.osRow(this, "开源许可声明", "MIT · LICENSE", "", true);
+        r5.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.LICENSE_URL); }
+        });
+        box.addView(r5, Ui.match());
+        View r6 = Ui.osRow(this, "同账号下的另一个项目", UpdateChecker.OTHER_REPO, "", false);
+        r6.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) { openGithub(UpdateChecker.OTHER_REPO_URL); }
+        });
+        box.addView(r6, Ui.match());
+    }
+
     private void about() {
         LinearLayout box = new LinearLayout(this);
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
 
-        box.addView(Ui.osTitle(this, "使用帮助", "v3.0.1"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "使用帮助", "v3.1.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "本 App 是第三方本地启动器：只负责在你手机本地运行 frpc 内核，"
                 + "不提供任何服务器；唯一外部连接是官方 API 与官方节点。", 2), Ui.gap(this, 12));
@@ -3245,7 +3365,15 @@ public class MainActivity extends Activity {
         box.addView(Ui.osRow(this, "③ 选择隧道", "「所有隧道」可多选，一次启动多条", "", true), Ui.match());
         box.addView(Ui.osRow(this, "④ 拉取配置并启动", "到日志页看「映射启动成功」", "", false), Ui.match());
 
-        box.addView(Ui.section(this, "v3.0.1 修复（本版）"));
+        box.addView(Ui.section(this, "v3.1.0 新增（本版）"));
+        box.addView(Ui.osTip(this,
+                "· 新增「检查更新」：连接本项目 GitHub Releases，手动点击才联网，只读取版本信息\n"
+                + "· 设置页「版本更新」卡片：检查更新 / 项目地址 / GitHub Star / 更新日志\n"
+                + "· 关于页新增项目与更新行：检查更新、项目地址、Star、更新日志、开源许可、另一项目入口\n"
+                + "· 发现新版本弹窗显示 Release 标题、更新说明与下载入口，不自动下载、不静默安装\n"
+                + "· 免责声明与域名清单如实补充 GitHub 更新检查（不点不联网）", 0), Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "v3.0.1 修复"));
         box.addView(Ui.osTip(this,
                 "· 修复「装了 QQ 只跳到 QQ 主界面」：改用 QQ 官方落地页的 Android 通道 "
                 + "mqqopensdkapi://bizAgent/qm/qr 直达加好友页\n"
@@ -3300,6 +3428,8 @@ public class MainActivity extends Activity {
                 + "v2.3 协议与地址解析修正 / 10 套主题 / 连接诊断\n"
                 + "v2.1 不再传 --strict-config（真机内核不认这个 flag）", 2), Ui.gap(this, 10));
 
+        addProjectRows(box);
+
         box.addView(Ui.section(this, "安全与声明"));
         box.addView(Ui.osRow(this, "本地数据",
                 "令牌 / 配置 / 日志 / 隧道列表 / 签到记录只存本机，卸载即清除", "", true), Ui.match());
@@ -3308,7 +3438,7 @@ public class MainActivity extends Activity {
         box.addView(Ui.osRow(this, "公网风险",
                 "隧道等于把本机端口开放到公网，只映射必要服务并设强密码", "", false), Ui.match());
         TextView ver = new TextView(this);
-        ver.setText("\n版本 2.9.0 · 包名 net.chmlfrp.mobile\n"
+        ver.setText("\n版本 3.1.0 · 包名 net.chmlfrp.mobile\n"
                 + "内核来自 ChmlFrp 官方客户端与 fatedier/frp（Apache-2.0）");
         ver.setTextSize(10);
         ver.setTextColor(Ui.MUTED);
@@ -4688,7 +4818,7 @@ public class MainActivity extends Activity {
         Kernel.Info k = Kernel.cached();
         String cfg = Config.readCurrent(this);
         String verify = sp.getString("tokenVerify", "");
-        StringBuilder b = new StringBuilder("一键自检 · v3.0.1\n\n");
+        StringBuilder b = new StringBuilder("一键自检 · v3.1.0\n\n");
         b.append("设备   ").append(i.brand).append(' ').append(i.model)
          .append(" · Android ").append(i.android).append('\n')
          .append("ABI   ").append(i.primaryAbi)
@@ -4733,7 +4863,7 @@ public class MainActivity extends Activity {
         DeviceInfo.Info i = DeviceInfo.collect(this);
         Kernel.Info k = Kernel.cached();
         StringBuilder b = new StringBuilder("ChmlFrp 运行诊断（已脱敏）\n");
-        b.append("版本   3.0.1\n")
+        b.append("版本   3.1.0\n")
          .append("设备   ").append(i.brand).append(' ').append(i.model).append('\n')
          .append("系统   Android ").append(i.android).append(" · API ").append(i.sdkInt).append('\n')
          .append("ABI    ").append(i.primaryAbi).append('\n')

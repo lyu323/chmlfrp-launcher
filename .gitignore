@@ -1,20 +1,21 @@
-# 签名密钥与打包产物绝不入库
+# 签名密钥 / 第三方内核二进制 / 打包产物绝不入库
 *.jks
 *.keystore
+*.so
 *.apk
+*.idsig
 *.zip
-aligned-*.apk
-work-*.apk
-base-*.apk
+*.pem
+.env
+libstage/
+cpolar-libs/
+frpc-libs/
+out/
 classes/
 dexout/
 gen/
 res.zip
-libstage-*/
-out/
-frpc-libs/
-# 本地凭证与工具链
-.gh_token
-.env
-*.pem
+base*.apk
+work*.apk
+aligned*.apk
 local.properties
