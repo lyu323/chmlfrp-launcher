@@ -11,9 +11,9 @@
 
 | 文件 | 适用 |
 | --- | --- |
-| `ChmlFrp启动器-arm64.apk` | 推荐，绝大多数现代安卓手机（arm64-v8a） |
-| `ChmlFrp启动器-全架构.apk` | arm64 / armeabi-v7a / x86_64 |
-| `ChmlFrp启动器-v3.0.1-源码.zip` | 与本仓库内容一致的源码快照 |
+| `ChmlFrpLauncher-v3.0.1-arm64.apk` | 推荐，绝大多数现代安卓手机（arm64-v8a） |
+| `ChmlFrpLauncher-v3.0.1-allarch.apk` | arm64 / armeabi-v7a / x86_64 |
+| `ChmlFrpLauncher-v3.0.1-source.zip` | 与本仓库内容一致的源码快照 |
 
 两个 APK 使用同一签名证书，可直接覆盖安装升级，本机令牌、配置、主题与隧道缓存都会保留。
 
