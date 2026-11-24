@@ -26,6 +26,9 @@ import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.EditText;
 import android.widget.FrameLayout;
+import android.widget.CompoundButton;
+import android.widget.ProgressBar;
+import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Spinner;
@@ -110,8 +113,10 @@ public class MainActivity extends Activity {
         switchPage(sp.getInt("page", 0));
         h.post(ticker);
         if (!new File(getFilesDir(), "runtime.log").exists()) {
-            log("[提示] v3.2.0：新增「检查更新」，连接本项目 GitHub Releases，手动点击才联网");
-            log("[提示] v3.2.0：设置页 / 关于页加入项目地址、Star、更新日志、开源许可与另一项目入口");
+            log("[提示] v3.3.0：新增「本地下载」，更新弹窗里直接下载 APK 不跳浏览器，安装需你确认");
+            log("[提示] v3.3.0：启动后自动检查一次（有新版本才弹窗，设置里可关）+ 3D 动态启动特效（可关）");
+            log("[提示] v3.3.0：新增「检查更新」，连接本项目 GitHub Releases，手动点击才联网");
+            log("[提示] v3.3.0：设置页 / 关于页加入项目地址、Star、更新日志、开源许可与另一项目入口");
             log("[提示] v3.0.1：联系作者内置 QQ 官方落地页，零联网直达加好友页，不再只打开主界面");
             log("[提示] v3.0.1：不再自动复制链接，只有点「复制链接」才写剪贴板");
             log("[提示] v3.0：修复装了 QQ 却跳浏览器（包可见性 + 强制交给 QQ）");
@@ -141,6 +146,10 @@ public class MainActivity extends Activity {
         renderDevice();
         Privacy.applyRecents(this);
         if (!Disclaimer.agreed(this)) showDisclaimer(true);
+        attachSplash();
+        h.postDelayed(new Runnable() {
+            @Override public void run() { autoCheckUpdate(); }
+        }, sp.getBoolean("splashEnabled", true) ? 2900L : 1400L);
     }
 
     /** 通知栏动作「看日志 / 隧道列表」拉起对应页面。 */
@@ -206,7 +215,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         int pad = Ui.dp(this, 4);
         box.setPadding(pad, pad, pad, pad);
-        box.addView(Ui.osTitle(this, "联系作者", "v3.2.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "联系作者", "v3.3.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "已修复「只跳到 QQ 主界面」：现在走 QQ 官方落地页的 Android 通道"
                 + "（mqqopensdkapi://bizAgent/qm/qr）直达加好友页，短链解析一次就本机缓存。"
@@ -514,7 +523,7 @@ public class MainActivity extends Activity {
         texts.addView(titleRow);
 
         TextView sub = new TextView(this);
-        sub.setText("安卓端 frpc · v2 API · 免 Root · v3.2.0");
+        sub.setText("安卓端 frpc · v2 API · 免 Root · v3.3.0");
         sub.setTextSize(11);
         sub.setTextColor(0xFFD6E4FF);
         sub.setPadding(0, Ui.dp(this, 3), 0, 0);
@@ -1479,9 +1488,9 @@ public class MainActivity extends Activity {
         c.addView(Ui.section(this, "版本更新"), Ui.gap(this, 8));
         LinearLayout upd = Ui.card(this);
         upd.addView(Ui.osTip(this,
-                "检查更新连接本项目 GitHub 仓库的 Releases（api.github.com 公开接口），"
-                + "只在点按钮时联网、只读取版本信息，不上传任何数据；发现新版只给下载入口，不自动安装。", 2),
-                Ui.gap(this, 8));
+                "启动后自动检查一次更新（有新版本才弹窗、不强制、同一版本只提醒一次，可在下面关闭）；"
+                + "手动检查可随时点。发现新版可「本地下载」直接在 App 内拉取 GitHub 资产并调起系统安装界面，"
+                + "不用跳浏览器；是否安装由你确认，不静默安装。", 2), Ui.gap(this, 8));
         upd.addView(Ui.row(this,
                 Ui.button(this, "检查更新", 2, new View.OnClickListener() {
                     @Override public void onClick(View v) { checkUpdate(); }
@@ -1496,9 +1505,34 @@ public class MainActivity extends Activity {
                 Ui.button(this, "更新日志", 2, new View.OnClickListener() {
                     @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
                 })), Ui.gap(this, 6));
+        android.widget.CheckBox cbAuto = new android.widget.CheckBox(this);
+        cbAuto.setText("启动后自动检查更新（仅新版弹窗，可关闭）");
+        cbAuto.setTextSize(12);
+        cbAuto.setTextColor(Ui.TEXT);
+        cbAuto.setChecked(sp.getBoolean("autoUpdate", true));
+        cbAuto.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                sp.edit().putBoolean("autoUpdate", on).commit();
+                toast(on ? "已开启启动自动检查更新" : "已关闭启动自动检查更新（手动检查仍可用）");
+            }
+        });
+        upd.addView(cbAuto, Ui.gap(this, 4));
+        android.widget.CheckBox cbSplash = new android.widget.CheckBox(this);
+        cbSplash.setText("3D 动态启动特效（关闭可省电 / 加快启动）");
+        cbSplash.setTextSize(12);
+        cbSplash.setTextColor(Ui.TEXT);
+        cbSplash.setChecked(sp.getBoolean("splashEnabled", true));
+        cbSplash.setOnCheckedChangeListener(new android.widget.CompoundButton.OnCheckedChangeListener() {
+            @Override public void onCheckedChanged(android.widget.CompoundButton b, boolean on) {
+                sp.edit().putBoolean("splashEnabled", on).commit();
+                toast(on ? "已开启 3D 启动特效，下次启动生效" : "已关闭 3D 启动特效，下次启动生效");
+            }
+        });
+        upd.addView(cbSplash, Ui.gap(this, 4));
         TextView uv = new TextView(this);
         uv.setText("当前版本 " + UpdateChecker.APP_VERSION
-                + " · 数据源：github.com/" + UpdateChecker.REPO + "/releases（不点不联网）");
+                + " · 数据源：github.com/" + UpdateChecker.REPO
+                + "/releases（启动自动检查可关 + 手动检查）");
         uv.setTextSize(10);
         uv.setTextColor(Ui.MUTED);
         upd.addView(uv, Ui.gap(this, 6));
@@ -3264,16 +3298,16 @@ public class MainActivity extends Activity {
         } else open(appDetails(), "请在应用详情里允许通知");
     }
 
-    /** v3.2.0：检查更新缓存有效期 10 分钟，期间重复点击不重复联网。 */
+    /** v3.3.0：检查更新缓存 10 分钟；启动自动检查节流 6 小时。 */
     private static final long UPDATE_CACHE_MS = 10L * 60 * 1000;
+    private static final long AUTO_CHECK_MS = 6L * 60 * 60 * 1000;
 
     /** 设置页「版本更新」卡里的「上次检查」行，检查完即时刷新。 */
     TextView tvLastCheck;
 
-    /** v3.2.0：手动检查更新，连接本项目 GitHub Releases（只读取，不上传）。 */
+    /** 手动检查：10 分钟内复用上次结果；force=true 强制刷新。 */
     private void checkUpdate() { checkUpdate(false); }
 
-    /** 10 分钟内复用上次结果，避免重复联网；force=true 时强制刷新。 */
     private void checkUpdate(final boolean force) {
         final long at = sp.getLong("updateAt", 0L);
         String cached = sp.getString("updateJson", "");
@@ -3284,14 +3318,68 @@ public class MainActivity extends Activity {
         toast(force ? "正在强制刷新 GitHub Release…" : "正在连接 GitHub 检查更新…");
         UpdateChecker.checkAsync(new UpdateChecker.Callback() {
             @Override public void done(final UpdateChecker.Info info) {
-                if (info.ok && info.raw.length() > 0) {
-                    sp.edit().putString("updateJson", info.raw)
-                            .putLong("updateAt", System.currentTimeMillis()).commit();
-                    updateLastCheckLabel();
-                }
+                cacheUpdate(info);
                 showUpdateResult(info, false, System.currentTimeMillis());
             }
         });
+    }
+
+    private void cacheUpdate(UpdateChecker.Info info) {
+        if (info.ok && info.raw.length() > 0) {
+            sp.edit().putString("updateJson", info.raw)
+                    .putLong("updateAt", System.currentTimeMillis()).commit();
+            updateLastCheckLabel();
+        }
+    }
+
+    /** v3.3.0：启动后自动检查一次。有新版本才弹窗，无新版完全静默；不是强制更新。 */
+    private void autoCheckUpdate() {
+        if (!sp.getBoolean("autoUpdate", true)) return;               // 设置里可关
+        long last = sp.getLong("autoUpdateAt", 0L);
+        if (System.currentTimeMillis() - last < AUTO_CHECK_MS) return; // 6 小时节流，防限流/骚扰
+        sp.edit().putLong("autoUpdateAt", System.currentTimeMillis()).commit();
+        UpdateChecker.checkAsync(new UpdateChecker.Callback() {
+            @Override public void done(UpdateChecker.Info info) {
+                cacheUpdate(info);
+                if (!info.ok || !info.newer) return;                   // 无新版：不弹窗、不 Toast
+                if (info.tag.equals(sp.getString("updatePromptedTag", ""))) return; // 同版只提醒一次
+                sp.edit().putString("updatePromptedTag", info.tag).commit();
+                showUpdateResult(info, false, System.currentTimeMillis());
+            }
+        });
+    }
+
+    /** v3.3.0：3D 动态启动特效覆盖层，设置页可关闭；失败不影响主流程。 */
+    private void attachSplash() {
+        if (!sp.getBoolean("splashEnabled", true)) return;
+        try {
+            final android.widget.FrameLayout ov = new android.widget.FrameLayout(this);
+            final SplashView sv = new SplashView(this, "ChmlFrp 启动器",
+                    UpdateChecker.APP_VERSION, Ui.BLUE);
+            ov.addView(sv, new android.widget.FrameLayout.LayoutParams(
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                    android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            ov.setClickable(true);
+            ((android.view.ViewGroup) getWindow().getDecorView()).addView(ov,
+                    new android.widget.FrameLayout.LayoutParams(
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT,
+                            android.widget.FrameLayout.LayoutParams.MATCH_PARENT));
+            sv.start(new Runnable() {
+                @Override public void run() {
+                    android.animation.ObjectAnimator fade =
+                            android.animation.ObjectAnimator.ofFloat(ov, "alpha", 1f, 0f);
+                    fade.setDuration(420);
+                    fade.start();
+                    h.postDelayed(new Runnable() {
+                        @Override public void run() {
+                            android.view.ViewGroup parent =
+                                    (android.view.ViewGroup) ov.getParent();
+                            if (parent != null) parent.removeView(ov);
+                        }
+                    }, 470L);
+                }
+            });
+        } catch (Exception ignored) { }
     }
 
     private String timeAgo(long at) {
@@ -3369,14 +3457,56 @@ public class MainActivity extends Activity {
                 copy("ChmlFrp 启动器 " + UpdateChecker.APP_VERSION + "\n"
                         + "包名 " + getPackageName() + "\n"
                         + "仓库 github.com/" + UpdateChecker.REPO + "\n"
-                        + "versionCode " + "16");
+                        + "versionCode " + "17");
                 toast("已复制构建信息");
                 return true;
             }
         });
     }
 
-    /** 结果弹窗：和「设置 / 关于」同一套液态玻璃卡片。 */
+    /** v3.3.0：App 内本地下载 APK，不跳浏览器；下载完只调起系统安装界面。 */
+    private void startLocalDownload(final UpdateChecker.Info info,
+                                    final android.widget.ProgressBar pb,
+                                    final TextView st) {
+        if (info.apkUrl.length() == 0) { toast("该 Release 暂无 APK 资产"); return; }
+        pb.setVisibility(View.VISIBLE);
+        pb.setProgress(0);
+        st.setText("正在从 GitHub 直接下载 APK… 不跳浏览器、不自动安装");
+        ApkDownloader.start(this, info.apkUrl, new ApkDownloader.Callback() {
+            @Override public void progress(long done, long total) {
+                if (total > 0) pb.setProgress((int) (done * 100L / total));
+                st.setText("已下载 " + (done / 1048576L) + " MB"
+                        + (total > 0 ? " / " + (total / 1048576L) + " MB" : "")
+                        + " · 请稍候，完成后会调起系统安装界面");
+            }
+            @Override public void done(java.io.File f) {
+                pb.setProgress(100);
+                st.setText("下载完成：" + f.getName() + " · 正在调起系统安装界面");
+                toast("下载完成，请在系统安装界面确认（不强制更新）");
+                installApk(f);
+            }
+            @Override public void error(String msg) {
+                st.setText("下载失败：" + msg + " · 可改用「打开 Releases 下载页」");
+                toast(msg);
+            }
+        });
+    }
+
+    /** 只把 content:// 交给系统安装界面，是否安装由用户确认；失败给兜底提示。 */
+    private void installApk(java.io.File f) {
+        try {
+            Intent i = new Intent(Intent.ACTION_VIEW);
+            i.setDataAndType(ApkProvider.uri(this, f.getName()), ApkProvider.MIME);
+            i.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION
+                    | Intent.FLAG_ACTIVITY_NEW_TASK);
+            startActivity(i);
+        } catch (Exception e) {
+            copy(f.getAbsolutePath());
+            toast("无法调起安装界面，已复制 APK 路径，可在文件管理器里打开安装");
+        }
+    }
+
+    /** 结果弹窗：Markdown 更新说明可读化 + 本地下载 + 查看完整日志。 */
     private void showUpdateResult(final UpdateChecker.Info info,
                                   final boolean cached, final long at) {
         LinearLayout box = new LinearLayout(this);
@@ -3387,46 +3517,75 @@ public class MainActivity extends Activity {
 
         box.addView(Ui.section(this, "数据源"), Ui.gap(this, 8));
         box.addView(Ui.osRow(this, "GitHub 仓库", UpdateChecker.REPO, "", true), Ui.match());
-        box.addView(Ui.osRow(this, "联网时机", "仅手动点「检查更新」时读取公开 Release 信息，不上传任何数据", "", true), Ui.match());
-        box.addView(Ui.osRow(this, "本机版本", UpdateChecker.APP_VERSION + " · " + getPackageName(), "", true), Ui.match());
+        box.addView(Ui.osRow(this, "联网时机",
+                "启动后自动检查一次（可在设置关闭）+ 手动检查；只读取版本信息，不上传任何数据",
+                "", true), Ui.match());
+        box.addView(Ui.osRow(this, "本机版本",
+                UpdateChecker.APP_VERSION + " · " + getPackageName(), "", true), Ui.match());
         box.addView(Ui.osRow(this, cached ? "本次结果" : "上次检查",
-                cached ? "使用了 10 分钟内缓存（" + timeAgo(at) + "）" : "刚刚联网读取", "", false), Ui.match());
+                cached ? "使用了 10 分钟内缓存（" + timeAgo(at) + "）" : "刚刚联网读取",
+                "", false), Ui.match());
+
+        final android.widget.ProgressBar pb = new android.widget.ProgressBar(
+                this, null, android.R.attr.progressBarStyleHorizontal);
+        pb.setMax(100);
+        pb.setVisibility(View.GONE);
+        final TextView st = new TextView(this);
+        st.setTextSize(11);
+        st.setTextColor(Ui.MUTED);
+
         if (info.ok) {
             box.addView(Ui.section(this, "最新版本"), Ui.gap(this, 8));
             String title = info.tag + (info.name.length() > 0 ? " · " + info.name : "");
             box.addView(Ui.osRow(this, "Release", title, "", true), Ui.match());
             box.addView(Ui.osRow(this, "下载页", info.htmlUrl, "", false), Ui.match());
-            if (info.body.length() > 0) {
-                String brief = info.body.length() > 420 ? info.body.substring(0, 420) + "…" : info.body;
-                box.addView(Ui.section(this, "更新说明"), Ui.gap(this, 8));
-                box.addView(Ui.osTip(this, brief, 0), Ui.gap(this, 8));
+            String plain = UpdateChecker.plain(info.body);
+            if (plain.length() > 0) {
+                if (plain.length() > 700) plain = plain.substring(0, 700) + "…";
+                box.addView(Ui.section(this, "本次更新了什么"), Ui.gap(this, 8));
+                box.addView(Ui.osTip(this, plain, 0), Ui.gap(this, 8));
             }
+            box.addView(Ui.osRow(this, "完整更新日志",
+                    "点底部「查看更新日志」到 GitHub 仓库的 CHANGELOG.md 看全部历史",
+                    "", false), Ui.match());
+            box.addView(st, Ui.gap(this, 6));
+            box.addView(pb, Ui.gap(this, 4));
             box.addView(Ui.row(this,
-                    Ui.button(this, "复制 APK 下载链接", 2, new View.OnClickListener() {
+                    Ui.button(this, "打开 Releases 下载页", 2, new View.OnClickListener() {
+                        @Override public void onClick(View v) {
+                            openGithub(info.ok && info.htmlUrl.length() > 0
+                                    ? info.htmlUrl : UpdateChecker.LATEST_URL);
+                        }
+                    }),
+                    Ui.button(this, "复制下载直链", 2, new View.OnClickListener() {
                         @Override public void onClick(View v) {
                             if (info.apkUrl.length() == 0) { toast("该 Release 暂无 APK 资产"); return; }
                             copy(info.apkUrl); toast("已复制 APK 下载直链");
                         }
-                    }),
-                    Ui.button(this, "↻ 强制刷新", 2, new View.OnClickListener() {
+                    })), Ui.gap(this, 6));
+            box.addView(Ui.button(this, "↻ 强制刷新（忽略缓存）", 2,
+                    new View.OnClickListener() {
                         @Override public void onClick(View v) { checkUpdate(true); }
-                    })), Ui.gap(this, 8));
+                    }), Ui.gap(this, 6));
         }
 
-        final String page = info.ok && info.htmlUrl.length() > 0
-                ? info.htmlUrl : UpdateChecker.LATEST_URL;
-        final String apk = info.apkUrl.length() > 0 ? info.apkUrl : UpdateChecker.RELEASES_URL;
+        final boolean hasApk = info.ok && info.apkUrl.length() > 0;
         new GlassDialog.Builder(this)
                 .setTitle(info.ok && info.newer ? "发现新版本" : "检查更新")
-                .setSubtitle(cached ? "本机缓存 · 未消耗流量" : "连接本项目 GitHub Releases · 只读取版本信息")
+                .setSubtitle(cached ? "本机缓存 · 未消耗流量"
+                        : "连接本项目 GitHub Releases · 只读取版本信息")
                 .setView(box)
-                .setPositiveButton("打开 Releases / 下载页", new DialogInterface.OnClickListener() {
-                    @Override public void onClick(DialogInterface d, int w) { openGithub(page); }
-                })
-                .setNeutralButton(info.ok && info.apkUrl.length() > 0 ? "直接下载 APK" : "项目主页",
+                .setPositiveButton(hasApk ? "⬇ 本地下载" : "项目主页",
                         new DialogInterface.OnClickListener() {
                     @Override public void onClick(DialogInterface d, int w) {
-                        openGithub(info.ok && info.apkUrl.length() > 0 ? apk : UpdateChecker.REPO_URL);
+                        if (hasApk) startLocalDownload(info, pb, st);
+                        else openGithub(UpdateChecker.REPO_URL);
+                    }
+                })
+                .setNeutralButton("查看更新日志", new DialogInterface.OnClickListener() {
+                    @Override public void onClick(DialogInterface d, int w) {
+                        openGithub(info.ok && info.htmlUrl.length() > 0
+                                ? UpdateChecker.CHANGELOG_URL : UpdateChecker.CHANGELOG_URL);
                     }
                 })
                 .setNegativeButton("关闭", null).show();
@@ -3450,7 +3609,7 @@ public class MainActivity extends Activity {
             @Override public void onClick(View v) { openGithub(UpdateChecker.STAR_URL); }
         });
         box.addView(r3, Ui.match());
-        View r4 = Ui.osRow(this, "更新日志", "CHANGELOG.md", "", true);
+        View r4 = Ui.osRow(this, "更新日志", "CHANGELOG.md · 看每一版更新了什么", "", true);
         r4.setOnClickListener(new View.OnClickListener() {
             @Override public void onClick(View v) { openGithub(UpdateChecker.CHANGELOG_URL); }
         });
@@ -3472,7 +3631,7 @@ public class MainActivity extends Activity {
         box.setOrientation(LinearLayout.VERTICAL);
         box.setPadding(Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4), Ui.dp(this, 4));
 
-        box.addView(Ui.osTitle(this, "使用帮助", "v3.2.0"), Ui.gap(this, 8));
+        box.addView(Ui.osTitle(this, "使用帮助", "v3.3.0"), Ui.gap(this, 8));
         box.addView(Ui.osTip(this,
                 "本 App 是第三方本地启动器：只负责在你手机本地运行 frpc 内核，"
                 + "不提供任何服务器；唯一外部连接是官方 API 与官方节点。", 2), Ui.gap(this, 12));
@@ -3483,7 +3642,20 @@ public class MainActivity extends Activity {
         box.addView(Ui.osRow(this, "③ 选择隧道", "「所有隧道」可多选，一次启动多条", "", true), Ui.match());
         box.addView(Ui.osRow(this, "④ 拉取配置并启动", "到日志页看「映射启动成功」", "", false), Ui.match());
 
-        box.addView(Ui.section(this, "v3.2.0 新增（本版）"));
+        box.addView(Ui.section(this, "v3.3.0 新增（本版）"));
+        box.addView(Ui.osTip(this,
+                "· 更新弹窗新增「⬇ 本地下载」：直接在 App 内从 GitHub Release 拉取 APK，不跳浏览器；"
+                + "下载完调起系统安装界面，是否安装由你确认，不静默安装\n"
+                + "· 启动后自动检查更新：有新版本才弹窗，没有完全静默；不是强制更新，同一版本只提醒一次，"
+                + "设置里可关闭\n"
+                + "· 更新说明不再显示原始 Markdown：自动整理成好读的文字；可点「查看更新日志」"
+                + "到 GitHub 仓库 CHANGELOG.md 看每一版更新了什么\n"
+                + "· 新增 3D 动态特效启动界面（旋转线框多面体 / 光环 / 粒子 / 扫描光 / 呼吸进度条），"
+                + "设置里可关闭，关闭后启动更快更省电\n"
+                + "· 免责声明与域名清单如实补充自动检查、资产 CDN 与本地下载（需你确认安装）", 0),
+                Ui.gap(this, 10));
+
+        box.addView(Ui.section(this, "v3.3.0 新增"));
         box.addView(Ui.osTip(this,
                 "· 修复 Cpolar 启动器「装了 QQ 却跳浏览器」：移植 QQ 官方直达通道（两个 App 现已一致）\n"
                 + "· 两个 App 统一改用 net.lyu323.* 包名，与开源仓库归属一致\n"
@@ -3494,7 +3666,7 @@ public class MainActivity extends Activity {
                 + "· 联系作者弹窗统一：本机检测、可选 QQ 号、独立「用浏览器打开」、不自动复制", 0),
                 Ui.gap(this, 10));
 
-        box.addView(Ui.section(this, "v3.2.0 新增"));
+        box.addView(Ui.section(this, "v3.3.0 新增"));
         box.addView(Ui.osTip(this,
                 "· 新增「检查更新」：连接本项目 GitHub Releases，手动点击才联网，只读取版本信息\n"
                 + "· 设置页「版本更新」卡片：检查更新 / 项目地址 / GitHub Star / 更新日志\n"
@@ -3567,7 +3739,7 @@ public class MainActivity extends Activity {
         box.addView(Ui.osRow(this, "公网风险",
                 "隧道等于把本机端口开放到公网，只映射必要服务并设强密码", "", false), Ui.match());
         TextView ver = new TextView(this);
-        ver.setText("\n版本 3.2.0 · 包名 net.lyu323.chmlfrp\n"
+        ver.setText("\n版本 3.3.0 · 包名 net.lyu323.chmlfrp\n"
                 + "内核来自 ChmlFrp 官方客户端与 fatedier/frp（Apache-2.0）");
         ver.setTextSize(10);
         ver.setTextColor(Ui.MUTED);
@@ -4953,7 +5125,7 @@ public class MainActivity extends Activity {
         Kernel.Info k = Kernel.cached();
         String cfg = Config.readCurrent(this);
         String verify = sp.getString("tokenVerify", "");
-        StringBuilder b = new StringBuilder("一键自检 · v3.2.0\n\n");
+        StringBuilder b = new StringBuilder("一键自检 · v3.3.0\n\n");
         b.append("设备   ").append(i.brand).append(' ').append(i.model)
          .append(" · Android ").append(i.android).append('\n')
          .append("ABI   ").append(i.primaryAbi)
@@ -4998,7 +5170,7 @@ public class MainActivity extends Activity {
         DeviceInfo.Info i = DeviceInfo.collect(this);
         Kernel.Info k = Kernel.cached();
         StringBuilder b = new StringBuilder("ChmlFrp 运行诊断（已脱敏）\n");
-        b.append("版本   3.2.0\n")
+        b.append("版本   3.3.0\n")
          .append("设备   ").append(i.brand).append(' ').append(i.model).append('\n')
          .append("系统   Android ").append(i.android).append(" · API ").append(i.sdkInt).append('\n')
          .append("ABI    ").append(i.primaryAbi).append('\n')

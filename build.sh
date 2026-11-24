@@ -51,7 +51,7 @@ build_variant() {
     $BT/aapt2 link -o "base-$variant.apk" -I "$AJ" \
         --manifest AndroidManifest.xml \
         --min-sdk-version 23 --target-sdk-version 35 \
-        --version-code 16 --version-name 3.2.0 \
+        --version-code 17 --version-name 3.3.0 \
         --java gen res.zip
 
     WORK_ABS="$PWD/work-$variant.apk"
@@ -80,7 +80,7 @@ build_variant() {
     ls -lh "$OUT_DIR/$outname"
 }
 
-build_variant arm64 libstage-arm64 "ChmlFrpLauncher-v3.2.0-arm64.apk"
-build_variant all   libstage-all  "ChmlFrpLauncher-v3.2.0-allarch.apk"
+build_variant arm64 libstage-arm64 "ChmlFrpLauncher-v3.3.0-arm64.apk"
+build_variant all   libstage-all  "ChmlFrpLauncher-v3.3.0-allarch.apk"
 
 echo "== 完成 =="

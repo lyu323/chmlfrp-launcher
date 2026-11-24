@@ -16,7 +16,7 @@ import android.content.SharedPreferences;
 public final class Disclaimer {
     private Disclaimer() {}
 
-    public static final String VERSION = "3.1";
+    public static final String VERSION = "3.2";
 
     /** 首次启动弹窗用的短版，读一遍就能明白边界。 */
     public static final String SHORT =
@@ -25,8 +25,11 @@ public final class Disclaimer {
       + "不代存到任何外部服务器、不上传你的数据。\n"
       + "· 网络行为：仅连接 ChmlFrp 官方 API（授权 / 隧道与配置查询 / 签到状态）"
       + "与官方 frp 节点（隧道流量）。除此之外不向任何第三方地址发送数据。\n"
-      + "· 更新检查：仅在你手动点「检查更新」时访问 GitHub 公开 API 读取本项目 Release 版本信息，"
-      + "只读取、不上传任何数据；不点不联网，不自动下载或安装。\n"
+      + "· 更新检查：启动后自动检查一次（可在设置关闭），手动点「检查更新」可随时检查；"
+      + "只访问 GitHub 公开 API 读取本项目 Release 版本信息，只读取、不上传任何数据；"
+      + "有新版本才弹窗提醒，不强制更新、同一版本只提醒一次，不自动下载或安装。\n"
+      + "· 本地下载：只有你点「本地下载」时，App 才从 GitHub Release 资产下载 APK 到本机私有目录，"
+      + "下载完调起系统安装界面，是否安装由你确认；不自动下载、不静默安装、不绕过系统校验。\n"
       + "· 本机数据：令牌、配置、日志、隧道列表、签到记录都只存在本机，"
       + "卸载即清除；不读 IMEI / MAC / 位置 / 通讯录 / 应用列表 / 剪贴板。\n"
       + "· 隧道风险：启动隧道等于把本机端口开放到公网，"
@@ -55,9 +58,12 @@ public final class Disclaimer {
                  + "拉取隧道配置、查询账号信息与签到状态；\n")
          .append("· 官方 frp 节点：由 frpc 内核按你自己的配置建立隧道，"
                  + "流量在节点与你的本机服务之间转发。\n")
-         .append("唯一的例外是手动触发的更新检查：点「检查更新」时访问 "
-                 + "api.github.com 的公开 Release 接口，仅 GET 版本信息，不发送任何本机数据，"
-                 + "不自动下载、不自动安装；不点不联网。\n")
+         .append("更新检查分两种：启动后自动检查一次（设置里可关闭）与手动点「检查更新」。"
+                 + "两者都只访问 api.github.com 的公开 Release 接口，仅 GET 版本信息，"
+                 + "不发送任何本机数据；自动检查发现新版本才弹窗提醒，不强制、不反复骚扰（同一版本只提醒一次）。\n")
+         .append("本地下载：仅在你点「本地下载」时，从 GitHub Release 资产（github.com 及其资产 CDN）"
+                 + "把 APK 下载到本机应用私有目录；完成后只调起系统安装界面，是否安装由你确认，"
+                 + "不自动下载、不静默安装、不绕过系统签名校验。\n")
          .append("除上述官方地址与手动更新检查外，本启动器不向任何第三方服务器发起请求，"
                  + "不含广告 SDK、不含统计 SDK、不含推送 SDK、无后台数据回传。"
                  + "你可在「设置 → 网络与隐私」里查看本版本实际使用的域名清单。\n\n");
@@ -91,8 +97,9 @@ public final class Disclaimer {
             "account-api.qzhua.net  官方 OAuth 授权与令牌",
             "panel.chmlfrp.net      官方管理面板（仅跳转浏览器）",
             "node.example.com       示例占位，实际节点以面板配置为准",
-            "api.github.com          检查更新：仅手动点按钮时读取公开 Release 信息",
-            "github.com              项目主页 / Releases 下载（仅浏览器跳转）",
+            "api.github.com          检查更新：启动自动一次 + 手动检查，读取公开 Release 信息",
+            "github.com              项目主页 / Releases / 更新日志（仅浏览器跳转）",
+            "release-assets.githubusercontent.com   GitHub 资产 CDN：仅点「本地下载」时",
             "（节点域名以你的配置为准，本启动器不内置任何节点）",
         };
     }
